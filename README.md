@@ -10,6 +10,13 @@ Read the subject files, the activity files, and the data files. Each of these co
 
 Binding by columns, the script then merges subjects with their activities. Setting the key sorts by subject first, then on the activity number. 
 
+The script then extracts the mean and the standard deviation. Once this is done, it gives useful names to the columns like activity names and activity number. The activity name is set as a key. 
+
+Once all the feature names are set, the data set is tidied up and exported in .txt format.
+
+
+
+
 
 
 
