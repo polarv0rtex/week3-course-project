@@ -78,3 +78,42 @@ setkey(dt, subject, activityNum, activityName)
 # melt the data and reshape as tall and narrow
 dt <- data.table(melt(dt, key(dt), variable.name="featureCode"))
 dt <- merge(dt, dtFeatures[, list(featureNum, featureCode, featureName)], by="featureCode", all.x=TRUE)
+
+dt$activity <- factor(dt$activityName)
+dt$feature  <- factor(dt$featureName)
+
+# create a function that separates features from names
+# this section enlisted a little help from a friend
+grepthis <- function (regex) {
+        grepl(regex, dt$feature)
+}
+
+n <- 2
+y <- matrix(seq(1, n), nrow=n)
+x <- matrix(c(grepthis("^t"), grepthis("^f")), ncol=nrow(y))
+dt$featDomain <- factor(x %*% y, labels=c("Time", "Freq"))
+x <- matrix(c(grepthis("Acc"), grepthis("Gyro")), ncol=nrow(y))
+dt$featInstrument <- factor(x %*% y, labels=c("Accelerometer", "Gyroscope"))
+x <- matrix(c(grepthis("BodyAcc"), grepthis("GravityAcc")), ncol=nrow(y))
+dt$featAcceleration <- factor(x %*% y, labels=c(NA, "Body", "Gravity"))
+x <- matrix(c(grepthis("mean()"), grepthis("std()")), ncol=nrow(y))
+dt$featVariable <- factor(x %*% y, labels=c("Mean", "SD"))
+## Features with 1 category
+dt$featJerk <- factor(grepthis("Jerk"), labels=c(NA, "Jerk"))
+dt$featMagnitude <- factor(grepthis("Mag"), labels=c(NA, "Magnitude"))
+## Features with 3 categories
+n <- 3
+y <- matrix(seq(1, n), nrow=n)
+x <- matrix(c(grepthis("-X"), grepthis("-Y"), grepthis("-Z")), ncol=nrow(y))
+dt$featAxis <- factor(x %*% y, labels=c(NA, "X", "Y", "Z"))
+
+r1 <- nrow(dt[, .N, by=c("feature")])
+r2 <- nrow(dt[, .N, by=c("featDomain", "featAcceleration", "featInstrument", "featJerk", "featMagnitude", "featVariable", "featAxis")])
+r1 == r2
+
+# create tidy dataset
+setkey(dt, subject, activity, featDomain, featAcceleration, featInstrument, featJerk, featMagnitude, featVariable, featAxis)
+dtTidy <- dt[, list(count = .N, average = mean(value)), by=key(dt)]
+
+# write tidy dataset
+write.table(dtTidy, file="tidy_data.txt", row.names = FALSE)
